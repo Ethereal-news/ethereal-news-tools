@@ -23,6 +23,23 @@ Or directly:
 node scripts/check-client-releases.js
 ```
 
+## Ethereum Dev Tools Release Checker
+
+Checks GitHub for the latest releases of Ethereum development tools (testing frameworks, libraries, compilers, etc.), showing release dates and summaries from the last 7 days.
+
+Monitors 50+ development tools including Foundry, Hardhat, OpenZeppelin, Viem, Wagmi, and more.
+
+### Usage
+
+```bash
+npm run check-dev-tools
+```
+
+Or directly:
+```bash
+node scripts/check-dev-tools-releases.js
+```
+
 ### Setup (Optional)
 
 Create a `.env` file with a GitHub token for higher rate limits (5,000 vs 60 requests/hour):

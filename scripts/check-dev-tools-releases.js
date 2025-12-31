@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Ethereum Client Release Checker
+ * Ethereum Dev Tools Release Checker
  * 
- * Checks GitHub for the latest releases of Ethereum execution and consensus layer clients.
+ * Checks GitHub for the latest releases of Ethereum development tools.
  * Provides release dates.
  */
 
@@ -13,24 +13,52 @@ const https = require('https');
 // Get GitHub token from environment (trim whitespace and check if not empty)
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN?.trim() || null;
 
-// Ethereum client repositories
-const CLIENTS = {
-  execution: [
-    { name: 'Geth', owner: 'ethereum', repo: 'go-ethereum' },
-    { name: 'Erigon', owner: 'ledgerwatch', repo: 'erigon' },
-    { name: 'Nethermind', owner: 'NethermindEth', repo: 'nethermind' },
-    { name: 'Besu', owner: 'hyperledger', repo: 'besu' },
-    { name: 'Reth', owner: 'paradigmxyz', repo: 'reth' },
-  ],
-  consensus: [
-    { name: 'Prysm', owner: 'prysmaticlabs', repo: 'prysm' },
-    { name: 'Lighthouse', owner: 'sigp', repo: 'lighthouse' },
-    { name: 'Teku', owner: 'ConsenSys', repo: 'teku' },
-    { name: 'Nimbus', owner: 'status-im', repo: 'nimbus-eth2' },
-    { name: 'Lodestar', owner: 'ChainSafe', repo: 'lodestar' },
-    { name: 'Grandine', owner: 'grandinetech', repo: 'grandine' },
-  ]
-};
+// Dev tools repositories (sorted alphabetically by owner, then repo)
+const DEV_TOOLS = [
+    { name: 'Halmos', owner: 'a16z', repo: 'halmos' },
+    { name: 'Ape', owner: 'ApeWorX', repo: 'ape' },
+    { name: 'Solidity', owner: 'argotorg', repo: 'solidity' },
+    { name: 'Sourcify', owner: 'argotorg', repo: 'sourcify' },
+    { name: 'Revm', owner: 'bluealloy', repo: 'revm' },
+    { name: 'EVMole', owner: 'cdump', repo: 'evmole' },
+    { name: 'Echidna', owner: 'crytic', repo: 'echidna' },
+    { name: 'Slither', owner: 'crytic', repo: 'slither' },
+    { name: 'solc-select', owner: 'crytic', repo: 'solc-select' },
+    { name: 'Foundry DevOps', owner: 'Cyfrin', repo: 'foundry-devops' },
+    { name: 'Headlong', owner: 'esaulpaugh', repo: 'headlong' },
+    { name: 'Ethers.js', owner: 'ethers-io', repo: 'ethers.js' },
+    { name: 'EthereumJS Monorepo', owner: 'ethereumjs', repo: 'ethereumjs-monorepo' },
+    { name: 'EthereumJS VM', owner: 'ethereumjs', repo: 'ethereumjs-vm' },
+    { name: 'Forge Std', owner: 'foundry-rs', repo: 'forge-std' },
+    { name: 'Foundry', owner: 'foundry-rs', repo: 'foundry' },
+    { name: 'Solidity Bytes Utils', owner: 'GNSPS', repo: 'solidity-bytes-utils' },
+    { name: 'TrueBlocks Core', owner: 'Great-Hill-Corporation', repo: 'trueblocks-core' },
+    { name: 'Circom', owner: 'iden3', repo: 'circom' },
+    { name: 'Gas Cost Estimator', owner: 'imapp-pl', repo: 'gas-cost-estimator' },
+    { name: 'Heimdall', owner: 'Jon-Becker', repo: 'heimdall-rs' },
+    { name: 'TS Essentials', owner: 'krzkaczor', repo: 'ts-essentials' },
+    { name: 'Nethereum', owner: 'Nethereum', repo: 'Nethereum' },
+    { name: 'Hardhat', owner: 'NomicFoundation', repo: 'hardhat' },
+    { name: 'Mythril', owner: 'ConsenSysDiligence', repo: 'mythril' },          // Added
+    { name: 'Solady', owner: 'Vectorized', repo: 'solady' },                   // Added
+    { name: 'OpenZeppelin Contracts', owner: 'OpenZeppelin', repo: 'openzeppelin-contracts' },
+    { name: 'Otterscan', owner: 'otterscan', repo: 'otterscan' },
+    { name: 'micro-eth-signer', owner: 'paulmillr', repo: 'micro-eth-signer' },
+    { name: 'noble-ciphers', owner: 'paulmillr', repo: 'noble-ciphers' },
+    { name: 'Snekmate', owner: 'pcaversaccio', repo: 'snekmate' },
+    { name: 'xdeployer', owner: 'pcaversaccio', repo: 'xdeployer' },
+    { name: 'VSCode Solidity Inspector', owner: 'PraneshASP', repo: 'vscode-solidity-inspector' },
+    { name: 'Prettier Solidity', owner: 'prettier-solidity', repo: 'prettier-plugin-solidity' },
+    { name: 'Solhint', owner: 'protofire', repo: 'solhint' },
+    { name: 'Semaphore', owner: 'semaphore-protocol', repo: 'semaphore' },
+    { name: 'BLST', owner: 'supranational', repo: 'blst' },
+    { name: 'Slither (Trail of Bits)', owner: 'trailofbits', repo: 'slither' },
+    { name: 'TrueBlocks Core (TrueBlocks)', owner: 'TrueBlocks', repo: 'trueblocks-core' },
+    { name: 'ZeroKit', owner: 'vacp2p', repo: 'zerokit' },
+    { name: 'Vyper', owner: 'vyperlang', repo: 'vyper' },
+    { name: 'Viem', owner: 'wagmi-dev', repo: 'viem' },
+    { name: 'Wagmi', owner: 'wagmi-dev', repo: 'wagmi' }
+  ];
 
 /**
  * Fetch data from GitHub API with redirect support
@@ -44,7 +72,7 @@ async function fetchGitHubAPI(url, redirectCount = 0, useToken = true) {
     }
 
     const headers = {
-      'User-Agent': 'Ethereum-Release-Checker',
+      'User-Agent': 'Ethereum-DevTools-Release-Checker',
       'Accept': 'application/vnd.github.v3+json'
     };
 
@@ -112,8 +140,8 @@ async function fetchGitHubAPI(url, redirectCount = 0, useToken = true) {
 /**
  * Get latest release for a repository
  */
-async function getLatestRelease(client) {
-  const url = `https://api.github.com/repos/${client.owner}/${client.repo}/releases/latest`;
+async function getLatestRelease(tool) {
+  const url = `https://api.github.com/repos/${tool.owner}/${tool.repo}/releases/latest`;
   
   try {
     const release = await fetchGitHubAPI(url);
@@ -122,14 +150,14 @@ async function getLatestRelease(client) {
     }
 
     return {
-      name: client.name,
+      name: tool.name,
       version: release.tag_name,
       publishedAt: new Date(release.published_at),
       url: release.html_url,
       prerelease: release.prerelease
     };
   } catch (error) {
-    console.error(`Error fetching release for ${client.name}: ${error.message}`);
+    console.error(`Error fetching release for ${tool.name}: ${error.message}`);
     return null;
   }
 }
@@ -203,41 +231,20 @@ function isWithinLast7Days(release) {
  * Main function
  */
 async function main() {
-  console.log('🔍 Checking for latest Ethereum client releases...\n');
+  console.log('🔍 Checking for latest Ethereum dev tools releases...\n');
   console.log('=' .repeat(70));
 
-  const results = {
-    execution: [],
-    consensus: []
-  };
+  const results = [];
 
-  // Fetch execution layer clients
-  console.log('\n📦 Execution Layer Clients:\n');
-  for (const client of CLIENTS.execution) {
-    process.stdout.write(`  Checking ${client.name}... `);
-    const release = await getLatestRelease(client);
+  // Fetch all dev tools
+  console.log('\n🛠️  Development Tools:\n');
+  for (const tool of DEV_TOOLS) {
+    process.stdout.write(`  Checking ${tool.name}... `);
+    const release = await getLatestRelease(tool);
     const formatted = formatRelease(release);
     
     if (formatted) {
-      results.execution.push(formatted);
-      console.log(`✓ Found ${formatted.version} (${formatted.date})`);
-    } else {
-      console.log('✗ No release found');
-    }
-    
-    // Small delay to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
-
-  // Fetch consensus layer clients
-  console.log('\n\n🔐 Consensus Layer Clients:\n');
-  for (const client of CLIENTS.consensus) {
-    process.stdout.write(`  Checking ${client.name}... `);
-    const release = await getLatestRelease(client);
-    const formatted = formatRelease(release);
-    
-    if (formatted) {
-      results.consensus.push(formatted);
+      results.push(formatted);
       console.log(`✓ Found ${formatted.version} (${formatted.date})`);
     } else {
       console.log('✗ No release found');
@@ -248,18 +255,15 @@ async function main() {
   }
 
   // Filter releases to only show those from the last 7 days
-  const recentExecution = results.execution.filter(isWithinLast7Days);
-  const recentConsensus = results.consensus.filter(isWithinLast7Days);
+  const recentReleases = results.filter(isWithinLast7Days);
 
   // Print summary
   console.log('\n\n' + '='.repeat(70));
   console.log('\n📊 RELEASE SUMMARY (Last 7 Days)\n');
   console.log('='.repeat(70));
 
-  // Execution Layer Summary
-  if (recentExecution.length > 0) {
-    console.log('\n🚀 EXECUTION LAYER CLIENTS\n');
-    recentExecution
+  if (recentReleases.length > 0) {
+    recentReleases
       .sort((a, b) => a.name.localeCompare(b.name))
       .forEach(release => {
         console.log(`\n${release.name} ${release.version}${release.prerelease ? ' (Pre-release)' : ''}`);
@@ -267,31 +271,15 @@ async function main() {
         console.log(`  URL: ${release.url}`);
       });
   } else {
-    console.log('\n🚀 EXECUTION LAYER CLIENTS\n');
-    console.log('  No releases in the last 7 days');
-  }
-
-  // Consensus Layer Summary
-  if (recentConsensus.length > 0) {
-    console.log('\n\n🔐 CONSENSUS LAYER CLIENTS\n');
-    recentConsensus
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .forEach(release => {
-        console.log(`\n${release.name} ${release.version}${release.prerelease ? ' (Pre-release)' : ''}`);
-        console.log(`  Released: ${release.date} (${release.relativeDate})`);
-        console.log(`  URL: ${release.url}`);
-      });
-  } else {
-    console.log('\n\n🔐 CONSENSUS LAYER CLIENTS\n');
-    console.log('  No releases in the last 7 days');
+    console.log('\n  No releases in the last 7 days');
   }
 
   // Summary statistics
   console.log('\n\n' + '='.repeat(70));
   console.log('\n📈 STATISTICS\n');
-  console.log(`  Execution Layer Clients: ${recentExecution.length} releases in last 7 days`);
-  console.log(`  Consensus Layer Clients: ${recentConsensus.length} releases in last 7 days`);
-  console.log(`  Total: ${recentExecution.length + recentConsensus.length} releases in last 7 days\n`);
+  console.log(`  Total Tools Checked: ${DEV_TOOLS.length}`);
+  console.log(`  Releases Found: ${results.length}`);
+  console.log(`  Releases in Last 7 Days: ${recentReleases.length}\n`);
 }
 
 // Run the script
@@ -302,5 +290,5 @@ if (require.main === module) {
   });
 }
 
-module.exports = { getLatestRelease, formatRelease, CLIENTS };
+module.exports = { getLatestRelease, formatRelease, DEV_TOOLS };
 
