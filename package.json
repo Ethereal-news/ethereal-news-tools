@@ -1,0 +1,24 @@
+{
+  "name": "ethereal-news-tools",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/Ethereal-news/ethereal-news-tools#readme",
+  "bugs": {
+    "url": "https://github.com/Ethereal-news/ethereal-news-tools/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ethereal-news/ethereal-news-tools.git"
+  },
+  "license": "MIT",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check-clients": "node scripts/check-client-releases.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}
