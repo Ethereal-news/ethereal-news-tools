@@ -29,6 +29,7 @@ const DEV_TOOLS = [
     { name: 'Ethers.js', owner: 'ethers-io', repo: 'ethers.js' },
     { name: 'EthereumJS Monorepo', owner: 'ethereumjs', repo: 'ethereumjs-monorepo' },
     { name: 'EthereumJS VM', owner: 'ethereumjs', repo: 'ethereumjs-vm' },
+    { name: 'Voltaire', owner: 'evmts', repo: 'voltaire' },
     { name: 'Forge Std', owner: 'foundry-rs', repo: 'forge-std' },
     { name: 'Foundry', owner: 'foundry-rs', repo: 'foundry' },
     { name: 'Solidity Bytes Utils', owner: 'GNSPS', repo: 'solidity-bytes-utils' },
