@@ -40,6 +40,23 @@ Or directly:
 node scripts/check-dev-tools-releases.js
 ```
 
+## Ethereum Blog Posts Checker
+
+Checks RSS feeds for the latest blog posts from Ethereum-related sources, showing posts from the last 7 days.
+
+Currently monitors the [Ethereum Foundation Blog](https://blog.ethereum.org/en/feed.xml).
+
+### Usage
+
+```bash
+npm run check-blogs
+```
+
+Or directly:
+```bash
+node scripts/check-blog-posts.js
+```
+
 ### Setup (Optional)
 
 Create a `.env` file with a GitHub token for higher rate limits (5,000 vs 60 requests/hour):
