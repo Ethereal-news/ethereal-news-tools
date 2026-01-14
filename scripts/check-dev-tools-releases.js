@@ -229,31 +229,60 @@ function isWithinLast7Days(release) {
 }
 
 /**
+ * Process tools in parallel batches
+ */
+async function processBatch(tools, batchSize = 10) {
+  const results = [];
+  
+  for (let i = 0; i < tools.length; i += batchSize) {
+    const batch = tools.slice(i, i + batchSize);
+    const batchPromises = batch.map(async (tool) => {
+      try {
+        const release = await getLatestRelease(tool);
+        const formatted = formatRelease(release);
+        return { tool, release: formatted, success: true };
+      } catch (error) {
+        return { tool, release: null, success: false, error: error.message };
+      }
+    });
+
+    const batchResults = await Promise.allSettled(batchPromises);
+    
+    for (const result of batchResults) {
+      if (result.status === 'fulfilled') {
+        const { tool, release, success } = result.value;
+        process.stdout.write(`  Checking ${tool.name}... `);
+        
+        if (release) {
+          results.push(release);
+          console.log(`✓ Found ${release.version} (${release.date})`);
+        } else {
+          console.log('✗ No release found');
+        }
+      } else {
+        console.log(`✗ Error: ${result.reason}`);
+      }
+    }
+    
+    // Small delay between batches to avoid rate limiting
+    if (i + batchSize < tools.length) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+  }
+  
+  return results;
+}
+
+/**
  * Main function
  */
 async function main() {
   console.log('🔍 Checking for latest Ethereum dev tools releases...\n');
   console.log('=' .repeat(70));
 
-  const results = [];
-
-  // Fetch all dev tools
+  // Fetch all dev tools in parallel batches
   console.log('\n🛠️  Development Tools:\n');
-  for (const tool of DEV_TOOLS) {
-    process.stdout.write(`  Checking ${tool.name}... `);
-    const release = await getLatestRelease(tool);
-    const formatted = formatRelease(release);
-    
-    if (formatted) {
-      results.push(formatted);
-      console.log(`✓ Found ${formatted.version} (${formatted.date})`);
-    } else {
-      console.log('✗ No release found');
-    }
-    
-    // Small delay to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
+  const results = await processBatch(DEV_TOOLS, 10);
 
   // Filter releases to only show those from the last 7 days
   const recentReleases = results.filter(isWithinLast7Days);

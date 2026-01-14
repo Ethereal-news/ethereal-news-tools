@@ -200,6 +200,51 @@ function isWithinLast7Days(release) {
 }
 
 /**
+ * Process clients in parallel batches
+ */
+async function processBatch(clients, batchSize = 10) {
+  const results = [];
+  
+  for (let i = 0; i < clients.length; i += batchSize) {
+    const batch = clients.slice(i, i + batchSize);
+    const batchPromises = batch.map(async (client) => {
+      try {
+        const release = await getLatestRelease(client);
+        const formatted = formatRelease(release);
+        return { client, release: formatted, success: true };
+      } catch (error) {
+        return { client, release: null, success: false, error: error.message };
+      }
+    });
+
+    const batchResults = await Promise.allSettled(batchPromises);
+    
+    for (const result of batchResults) {
+      if (result.status === 'fulfilled') {
+        const { client, release, success } = result.value;
+        process.stdout.write(`  Checking ${client.name}... `);
+        
+        if (release) {
+          results.push(release);
+          console.log(`✓ Found ${release.version} (${release.date})`);
+        } else {
+          console.log('✗ No release found');
+        }
+      } else {
+        console.log(`✗ Error: ${result.reason}`);
+      }
+    }
+    
+    // Small delay between batches to avoid rate limiting
+    if (i + batchSize < clients.length) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+  }
+  
+  return results;
+}
+
+/**
  * Main function
  */
 async function main() {
@@ -211,41 +256,13 @@ async function main() {
     consensus: []
   };
 
-  // Fetch execution layer clients
+  // Fetch execution layer clients in parallel batches
   console.log('\n📦 Execution Layer Clients:\n');
-  for (const client of CLIENTS.execution) {
-    process.stdout.write(`  Checking ${client.name}... `);
-    const release = await getLatestRelease(client);
-    const formatted = formatRelease(release);
-    
-    if (formatted) {
-      results.execution.push(formatted);
-      console.log(`✓ Found ${formatted.version} (${formatted.date})`);
-    } else {
-      console.log('✗ No release found');
-    }
-    
-    // Small delay to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
+  results.execution = await processBatch(CLIENTS.execution, 10);
 
-  // Fetch consensus layer clients
+  // Fetch consensus layer clients in parallel batches
   console.log('\n\n🔐 Consensus Layer Clients:\n');
-  for (const client of CLIENTS.consensus) {
-    process.stdout.write(`  Checking ${client.name}... `);
-    const release = await getLatestRelease(client);
-    const formatted = formatRelease(release);
-    
-    if (formatted) {
-      results.consensus.push(formatted);
-      console.log(`✓ Found ${formatted.version} (${formatted.date})`);
-    } else {
-      console.log('✗ No release found');
-    }
-    
-    // Small delay to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
+  results.consensus = await processBatch(CLIENTS.consensus, 10);
 
   // Filter releases to only show those from the last 7 days
   const recentExecution = results.execution.filter(isWithinLast7Days);
