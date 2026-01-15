@@ -11,10 +11,16 @@ require('dotenv').config();
 const https = require('https');
 const { parseString } = require('xml2js');
 
-// RSS feeds to check
+// RSS feeds to check (sorted alphabetically by name)
 const RSS_FEEDS = [
+  { name: 'Argot Blog', url: 'https://www.argot.org/feed.xml' },
   { name: 'Ethereum Foundation Blog', url: 'https://blog.ethereum.org/en/feed.xml' },
-  { name: 'zkEVM Blog', url: 'https://zkevm.ethereum.foundation/blog/feed.xml' },
+  { name: 'Ethereum Remix Substack', url: 'https://ethereumremix.substack.com/feed' },
+  { name: 'Ethereum Panda Ops Notes', url: 'https://notes.ethereum.org/@ethpandaops.rss' }, // HackMD - may not have RSS
+  { name: 'PSE Blog', url: 'https://pse.dev/blog/feed.xml' }, // No RSS feed available yet
+  { name: 'Solidity Blog', url: 'https://www.soliditylang.org/blog/feed.xml' }, // No RSS feed available yet
+  { name: 'Vitalik Buterin Blog', url: 'https://vitalik.eth.limo/feed.xml' },
+  { name: 'zkEVM Blog', url: 'https://zkevm.ethereum.foundation/blog/feed.xml' }, // No RSS feed available yet
 ];
 
 /**
@@ -31,13 +37,18 @@ async function fetchRSSFeed(url) {
 
       res.on('end', () => {
         if (res.statusCode === 200) {
-          parseString(data, (err, result) => {
-            if (err) {
-              reject(new Error(`Failed to parse RSS feed: ${err.message}`));
-            } else {
-              resolve(result);
-            }
-          });
+          // Check if response is HTML instead of XML/RSS
+          if (data.trim().startsWith('<!DOCTYPE') || data.trim().startsWith('<html')) {
+            reject(new Error('Response is HTML, not RSS feed'));
+          } else {
+            parseString(data, (err, result) => {
+              if (err) {
+                reject(new Error(`Failed to parse RSS feed: ${err.message}`));
+              } else {
+                resolve(result);
+              }
+            });
+          }
         } else {
           reject(new Error(`HTTP error: ${res.statusCode}`));
         }
