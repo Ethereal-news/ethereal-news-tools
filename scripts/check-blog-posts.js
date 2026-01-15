@@ -14,6 +14,7 @@ const { parseString } = require('xml2js');
 // RSS feeds to check
 const RSS_FEEDS = [
   { name: 'Ethereum Foundation Blog', url: 'https://blog.ethereum.org/en/feed.xml' },
+  { name: 'zkEVM Blog', url: 'https://zkevm.ethereum.foundation/blog/feed.xml' },
 ];
 
 /**
